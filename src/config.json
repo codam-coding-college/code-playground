@@ -1,0 +1,9 @@
+{
+	"port": 4242,
+	"timeout": 5,
+	"tmpDir": "./tmp",
+	"validOrigins": [
+		"*.42.fr",
+		"*.codam.nl"
+	]
+}
