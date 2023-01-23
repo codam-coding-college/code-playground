@@ -4,9 +4,11 @@
 # -----------------------------------------------------------------------------
 
 FROM node:18-bullseye
-MAINTAINER "W2Wizard <it@codam.nl>"
-EXPOSE 4242
 
+LABEL author="W2Wizard"
+LABEL email="it@codam.nl"
+
+EXPOSE 4242
 RUN apt-get -y update && apt-get -y install build-essential python3
 
 COPY . .
