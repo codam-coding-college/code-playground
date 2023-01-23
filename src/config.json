@@ -4,6 +4,7 @@
 	"tmpDir": "./tmp",
 	"validOrigins": [
 		"*.42.fr",
-		"*.codam.nl"
+		"*.codam.nl",
+		"localhost:3000"
 	]
 }

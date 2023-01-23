@@ -12,31 +12,38 @@ import { Request, Response, NextFunction } from "express";
 // Globals
 /*============================================================================*/
 
-export const webserv = express();
+export const app = express();
 export const port = 4242;
 
 // Middleware
 /*============================================================================*/
 
-webserv.use(cors());
-webserv.use(express.json());
-webserv.use(express.urlencoded({ extended: true }));
-webserv.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 	if (err.statusCode === 400 && "body" in err)
 		res.status(400).send({ status: 400, message: err.message });
 });
 
+const corsOptions = {
+	origin: '*',
+	allowedHeaders: ['*'],
+};
+
 // Routes
 /*============================================================================*/
-
-webserv.post('/playground/', (req, res) => {
+app.options('/playground', cors(corsOptions));
+app.post('/playground', cors(corsOptions), (req, res) => {
 	const code = req.body.code as string;
 	const flags = req.body.flags as string;
 	const language = req.body.language as string;
 
+	console.log(req.body)
 	// Check request
-	if(!req.is("application/json"))
-		return res.status(400).json({ result: null, error: "Incorrect content type!" });
+	// if(!req.is("json"))
+	// 	return res.status(400).json({ result: null, error: "Incorrect content type!" });
 	if (code == null || language == null || flags == null)
 		return res.status(400).json({ result: null, error: "Malformed body" });
 
@@ -63,4 +70,4 @@ webserv.post('/playground/', (req, res) => {
 // Entry point
 /*============================================================================*/
 
-webserv.listen(port, () => console.log(`[Playground] Running on: ${port}`));
+app.listen(port, () => console.log(`[Playground] Running on: ${port}`));
