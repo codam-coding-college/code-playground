@@ -1,7 +1,0 @@
-{
-	"port": 4242,
-	"executionTimeout": 5000,
-	"validOrigins": [
-		"*.codam.nl"
-	]
-}
