@@ -1,0 +1,11 @@
+# -----------------------------------------------------------------------------
+# Codam Coding College, Amsterdam @ 2023.
+# See README in the root project for more information.
+# -----------------------------------------------------------------------------
+
+[network]
+ip = "127.0.0.1"
+port = 4242
+
+[execute]
+timeout = 5000

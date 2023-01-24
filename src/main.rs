@@ -1,19 +1,26 @@
-mod api;
+// -----------------------------------------------------------------------------
+// Codam Coding College, Amsterdam @ 2023.
+// See README in the root project for more information.
+// -----------------------------------------------------------------------------
 
-use actix_web::{ HttpServer, App, web::Data, middleware::Logger };
+use std::{ net::SocketAddr };
+use axum::{response::Html, routing::post, Router};
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "debug");
-    std::env::set_var("RUST_BACKTRACE", "1");
-    env_logger::init();
+pub mod config;
 
-    HttpServer::new(move || {
+#[tokio::main]
+async fn main() {
+	let config = config::Config::from_file("./Config.toml").unwrap();
+	let app = Router::new().route("/playground", post(execute_code));
+	let addr = SocketAddr::from((config.network.ip, config.network.port));
 
-        let logger = Logger::default();
-        App::new().wrap(logger);
-    })
-    .bind(("127.0.0.1", 4242))?
-    .run()
-    .await
+	println!("Running on {}", addr);
+	axum::Server::bind(&addr)
+		.serve(app.into_make_service())
+		.await
+		.unwrap();
+}
+
+async fn execute_code() -> Html<&'static str> {
+	Html("<h1>Hello, World!</h1>")
 }

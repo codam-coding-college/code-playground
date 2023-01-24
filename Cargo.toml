@@ -2,12 +2,16 @@
 name = "code-playground"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix = "0.13.0"
+anyhow = "1.0.68"
+axum = "0.6.4"
 env_logger = "0.10.0"
 log = "0.4.17"
 serde = "1.0.152"
+tokio = { version = "1.24.2", features = ["full"] }
+toml = "0.6.0"
 uuid = "1.2.2"
