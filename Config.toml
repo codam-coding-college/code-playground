@@ -3,9 +3,29 @@
 # See README in the root project for more information.
 # -----------------------------------------------------------------------------
 
+# Configurations for the webserver
 [network]
 ip = "127.0.0.1"
 port = 4242
 
-[execute]
+# Configurations of the overall execution
+[executor]
 timeout = 5000
+
+# Convention:
+# {sourceFile} => The file with the source code.
+# {executeFile} => The compiled binary file to execute.
+
+[[executor.languages]]
+lang = "c"
+compile = "gcc {sourceFile} -o {executeFile}"
+run = "{executeFile}"
+
+[[executor.languages]]
+lang = "py"
+run = "python3 {sourceFile}"
+
+# Assuming we only support single source files.
+[[executor.languages]]
+lang = "rust"
+run = "cargo script {sourceFile}"

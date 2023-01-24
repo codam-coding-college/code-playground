@@ -16,16 +16,7 @@ pub struct Config {
 	/// The networking configuration.
 	pub network: NetworkConfig,
 	/// The code execution configuration.
-	pub execute: ExecuteConfig,
-}
-
-impl FromStr for Config {
-	type Err = Error;
-
-	/// Load a `Config` from some string.
-	fn from_str(src: &str) -> Result<Self> {
-		toml::from_str(src).with_context(|| "Invalid configuration file")
-	}
+	pub executor: ExecutorConfig,
 }
 
 impl Config {
@@ -39,6 +30,15 @@ impl Config {
 			.with_context(|| "Couldn't read the file")?;
 
 		return Config::from_str(&buffer);
+	}
+}
+
+impl FromStr for Config {
+	type Err = Error;
+
+	/// Load a `Config` from some string.
+	fn from_str(src: &str) -> Result<Self> {
+		toml::from_str(src).with_context(|| "Invalid configuration file")
 	}
 }
 
@@ -64,14 +64,39 @@ impl Default for NetworkConfig {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
-pub struct ExecuteConfig {
+pub struct ExecutorConfig {
 	pub timeout: u32,
+	pub languages: Vec<CodeLanguage>
 }
 
-impl Default for ExecuteConfig {
-	fn default() -> ExecuteConfig {
-		ExecuteConfig {
-			timeout: 5000
+impl Default for ExecutorConfig {
+	fn default() -> ExecutorConfig {
+		ExecutorConfig {
+			timeout: 5000,
+			languages: vec![]
+		}
+	}
+}
+
+//===========================================================================//
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "kebab-case")]
+pub struct CodeLanguage {
+	/// The language name, e.g: `c`, `cpp`, `py`
+	pub language: String,
+	/// The compile command, e.g: `gcc {sourceFile} -o {executeFile}`
+	pub compile: Option<String>,
+	/// The execute command, e.g: `{executeFile}` or if compile is optional `python3 {executeFile}`
+	pub execute: String,
+}
+
+impl Default for CodeLanguage {
+	fn default() -> CodeLanguage {
+		CodeLanguage {
+			compile: Some("gcc {sourceFile} -o {executeFile}".to_string()),
+			execute: "{executeFile}".to_string(),
+			language: "c".to_string()
 		}
 	}
 }
