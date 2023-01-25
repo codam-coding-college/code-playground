@@ -13,7 +13,7 @@ use axum::{
 use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::AppState;
+use crate::{AppState, executor::ModuleParams};
 
 // Request and Response
 //===========================================================================//
@@ -60,6 +60,16 @@ pub async fn handle(
 			})
 		),
 		Some(lang) => lang
+	};
+
+	let module = ModuleParams {
+		extension: code_lang.extension.clone(),
+		timeout: state.config.executor.timeout,
+		code: payload.code,
+		flags: match payload.flags {
+			None => String::from(""),
+			Some(x) => x
+		},
 	};
 
 	return (

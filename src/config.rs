@@ -73,7 +73,7 @@ impl Default for NetworkConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct ExecutorConfig {
-	pub timeout: u32,
+	pub timeout: u64,
 	pub languages: Vec<CodeLanguage>
 }
 

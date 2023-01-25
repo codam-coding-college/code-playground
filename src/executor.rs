@@ -6,7 +6,6 @@
 use anyhow::{ Result };
 use uuid::Uuid;
 use tempfile::tempdir;
-use wait_timeout::ChildExt;
 use std::fs::File;
 use std::io::{Write};
 use std::process::{Stdio, Command};
@@ -14,6 +13,7 @@ use std::time::Duration;
 
 //===========================================================================//
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct ModuleParams {
 	/// The code to execute.
 	pub code: String,
