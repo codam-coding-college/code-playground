@@ -1,23 +1,18 @@
 // -----------------------------------------------------------------------------
 // Codam Coding College, Amsterdam @ 2023.
 // See README in the root project for more information.
-// ---------0----------------------1----------------------------------------
+// -----------------------------------------------------------------------------
 
 mod api;
 mod config;
 mod executor;
 
 use log::info;
+use std::sync::Arc;
 use config::Config;
 use std::net::SocketAddr;
-use std::sync::Arc;
-use axum::{
-	Router,
-	routing::post,
-	http::{Request, StatusCode},
-	response::Response,
-	middleware::{Next, self}, extract::State,
-};
+use tower_http::cors::CorsLayer;
+use axum::{http::{self, HeaderValue, Method}, routing::post, Router};
 
 // State
 //===========================================================================//
@@ -27,31 +22,29 @@ pub struct AppState {
 	config: Config,
 }
 
-// Main
 //===========================================================================//
 
-/// Filter requests by content-type.
-///
-/// https://docs.rs/axum/latest/axum/middleware/fn.from_fn.html
-async fn filter<B>(
-	State(state): State<Arc<AppState>>,
-	request: Request<B>,
-	next: Next<B>,
-) -> Result<Response, StatusCode> {
-	let headers = request.headers();
+/// Create the cors layer
+fn get_cors_layer(state: Arc<AppState>) -> CorsLayer {
+	let origins = state.config.network.origins
+		.iter()
+		.map(|s| s.parse::<HeaderValue>().unwrap())
+		.collect::<Vec<HeaderValue>>();
 
-	if headers["content-type"] != "application/json" {
-		return Err(StatusCode::UNSUPPORTED_MEDIA_TYPE);
-	}
-
-	let response = next.run(request).await;
-	Ok(response)
+	println!("{:?}", origins);
+	return CorsLayer::new()
+		.allow_origin(origins)
+		.allow_methods([Method::POST])
+		.allow_headers([http::header::CONTENT_TYPE]); // For JSON
 }
+
+//===========================================================================//
 
 #[tokio::main]
 async fn main() {
 	info!("Starting playground...");
 
+	// Create state
 	let config = Config::from_file("./Config.toml").unwrap();
 	let state = Arc::new(AppState { config });
 
@@ -59,13 +52,11 @@ async fn main() {
 	let addr = SocketAddr::from((state.config.network.ip, state.config.network.port));
 	let app = Router::new()
 		.route("/playground", post(api::playground::handle))
-		.route_layer(middleware::from_fn_with_state(state.clone(), filter))
-		.with_state(state);
+		.route_layer(get_cors_layer(state.clone()))
+		.with_state(state)
+		.into_make_service();
 
 	// Run the server
 	info!("Running on: {}", addr);
-	axum::Server::bind(&addr)
-		.serve(app.into_make_service())
-		.await
-		.unwrap();
+	axum::Server::bind(&addr).serve(app).await.unwrap();
 }

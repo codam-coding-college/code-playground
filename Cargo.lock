@@ -120,6 +120,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "toml",
+ "tower-http",
  "uuid",
 ]
 

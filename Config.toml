@@ -8,7 +8,7 @@
 ip = "127.0.0.1"
 port = 4242
 timeout = 10
-origins = [".codam.nl"]
+origins = ["https://codam.nl"]
 
 # Configurations of the overall execution
 [executor]

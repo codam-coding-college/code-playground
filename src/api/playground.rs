@@ -42,7 +42,7 @@ pub async fn handle(
 	State(state): State<Arc<AppState>>,
 	Json(payload): Json<PlaygroundRequest>
 ) -> impl IntoResponse {
-	println!("Received request: {:?}", payload);
+	println!("{:?}", payload);
 
 	return (StatusCode::CREATED, Json(PlaygroundResponse {
 		error: None,
