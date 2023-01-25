@@ -1,36 +1,71 @@
 // -----------------------------------------------------------------------------
 // Codam Coding College, Amsterdam @ 2023.
 // See README in the root project for more information.
-// -----------------------------------------------------------------------------
+// ---------0----------------------1----------------------------------------
+
+mod api;
+mod config;
+mod executor;
 
 use log::info;
+use config::Config;
 use std::net::SocketAddr;
-use axum::{response::Json, routing::post, Router};
+use std::sync::Arc;
+use axum::{
+	Router,
+	routing::post,
+	http::{Request, StatusCode},
+	response::Response,
+	middleware::{Next, self}, extract::State,
+};
 
-pub mod config;
-pub mod executor;
-
+// State
 //===========================================================================//
+
+#[derive(Clone)]
+pub struct AppState {
+	config: Config,
+}
+
+// Main
+//===========================================================================//
+
+/// Filter requests by content-type.
+///
+/// https://docs.rs/axum/latest/axum/middleware/fn.from_fn.html
+async fn filter<B>(state: Arc<AppState>, request: Request<B>, next: Next<B>) -> Result<Response, StatusCode> {
+	let headers = request.headers();
+
+	if headers["content-type"] != "application/json" {
+		return Err(StatusCode::UNSUPPORTED_MEDIA_TYPE);
+	}
+
+	//TODO: Check origin
+
+	let response = next.run(request).await;
+	Ok(response)
+}
 
 #[tokio::main]
 async fn main() {
 	info!("Starting playground...");
 
-	// Read configuration file
-	let config = config::Config::from_file("./Config.toml").unwrap();
+	let config = Config::from_file("./Config.toml").unwrap();
+	let state = Arc::new(AppState { config });
 
 	// Construct routes and address
-	let app = Router::new().route("/playground", post(execute_code));
-	let addr = SocketAddr::from((config.network.ip, config.network.port));
-	info!("Running on: {}", addr);
+	let addr = SocketAddr::from((state.config.network.ip, state.config.network.port));
+	let app = Router::new()
+		.route("/playground", post(api::playground::handle))
+		.layer(middleware::from_fn(move |req, next| {
+			filter(state.clone(), req, next)
+		}))
+		.with_state(state);
 
 	// Run the server
+	info!("Running on: {}", addr);
 	axum::Server::bind(&addr)
 		.serve(app.into_make_service())
 		.await
 		.unwrap();
-}
-
-async fn execute_code() -> Json<&'static str> {
-	Json("{}")
 }

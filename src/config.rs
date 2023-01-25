@@ -47,15 +47,23 @@ impl FromStr for Config {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct NetworkConfig {
+	/// The ip to run the server on.
 	pub ip: Ipv4Addr,
+	/// The port to listen on.
 	pub port: u16,
+	/// Timeout in seconds for the requests.
+	pub timeout: u16,
+	/// Origins to allow incoming requests from.
+	pub origins: Vec<String>
 }
 
 impl Default for NetworkConfig {
 	fn default() -> NetworkConfig {
 		NetworkConfig {
 			ip: Ipv4Addr::new(127, 0, 0, 1),
-			port: 4242
+			port: 4242,
+			timeout: 10,
+			origins: vec![".codam.nl".to_string()]
 		}
 	}
 }
@@ -84,7 +92,7 @@ impl Default for ExecutorConfig {
 #[serde(default, rename_all = "kebab-case")]
 pub struct CodeLanguage {
 	/// The language name, e.g: `c`, `cpp`, `py`
-	pub language: String,
+	pub name: String,
 	/// The compile command, e.g: `gcc {sourceFile} -o {executeFile}`
 	pub compile: Option<String>,
 	/// The execute command, e.g: `{executeFile}` or if compile is optional `python3 {executeFile}`
@@ -96,7 +104,7 @@ impl Default for CodeLanguage {
 		CodeLanguage {
 			compile: Some("gcc {sourceFile} -o {executeFile}".to_string()),
 			execute: "{executeFile}".to_string(),
-			language: "c".to_string()
+			name: "c".to_string()
 		}
 	}
 }

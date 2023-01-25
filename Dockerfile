@@ -3,15 +3,12 @@
 # See README in the root project for more information.
 # -----------------------------------------------------------------------------
 
-FROM node:18-bullseye
-
-LABEL author="W2Wizard"
-LABEL email="it@codam.nl"
+FROM rust:bullseye
 
 EXPOSE 4242
-RUN apt-get -y update && apt-get -y install build-essential python3
 
+WORKDIR /usr/src/playground
 COPY . .
 
-RUN npm run build
-ENTRYPOINT [ "npm", "run", "start" ]
+RUN cargo install --path .
+ENTRYPOINT [ "cargo", "run", "--release" ]

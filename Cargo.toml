@@ -12,6 +12,7 @@ axum = "0.6.4"
 env_logger = "0.10.0"
 log = "0.4.17"
 serde = "1.0.152"
+serde_json = "1.0.91"
 tokio = { version = "1.24.2", features = ["full"] }
 toml = "0.6.0"
 uuid = "1.2.2"
