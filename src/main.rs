@@ -33,14 +33,16 @@ pub struct AppState {
 /// Filter requests by content-type.
 ///
 /// https://docs.rs/axum/latest/axum/middleware/fn.from_fn.html
-async fn filter<B>(state: Arc<AppState>, request: Request<B>, next: Next<B>) -> Result<Response, StatusCode> {
+async fn filter<B>(
+	State(state): State<Arc<AppState>>,
+	request: Request<B>,
+	next: Next<B>,
+) -> Result<Response, StatusCode> {
 	let headers = request.headers();
 
 	if headers["content-type"] != "application/json" {
 		return Err(StatusCode::UNSUPPORTED_MEDIA_TYPE);
 	}
-
-	//TODO: Check origin
 
 	let response = next.run(request).await;
 	Ok(response)
@@ -57,9 +59,7 @@ async fn main() {
 	let addr = SocketAddr::from((state.config.network.ip, state.config.network.port));
 	let app = Router::new()
 		.route("/playground", post(api::playground::handle))
-		.layer(middleware::from_fn(move |req, next| {
-			filter(state.clone(), req, next)
-		}))
+		.route_layer(middleware::from_fn_with_state(state.clone(), filter))
 		.with_state(state);
 
 	// Run the server
