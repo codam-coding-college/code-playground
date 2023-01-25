@@ -91,12 +91,14 @@ impl Default for ExecutorConfig {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub struct CodeLanguage {
-	/// The language name, e.g: `c`, `cpp`, `py`
+	/// The language name, e.g: `c`, `cpp`, `rust`, this will be used to match with what is requested.
 	pub name: String,
 	/// The compile command, e.g: `gcc {sourceFile} -o {executeFile}`
 	pub compile: Option<String>,
 	/// The execute command, e.g: `{executeFile}` or if compile is optional `python3 {executeFile}`
 	pub execute: String,
+	/// The file extension of the language.
+	pub extension: String
 }
 
 impl Default for CodeLanguage {
@@ -104,7 +106,8 @@ impl Default for CodeLanguage {
 		CodeLanguage {
 			compile: Some("gcc {sourceFile} -o {executeFile}".to_string()),
 			execute: "{executeFile}".to_string(),
-			name: "c".to_string()
+			name: "c".to_string(),
+			extension: "c".to_string()
 		}
 	}
 }

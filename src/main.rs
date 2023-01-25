@@ -31,7 +31,6 @@ fn get_cors_layer(state: Arc<AppState>) -> CorsLayer {
 		.map(|s| s.parse::<HeaderValue>().unwrap())
 		.collect::<Vec<HeaderValue>>();
 
-	println!("{:?}", origins);
 	return CorsLayer::new()
 		.allow_origin(origins)
 		.allow_methods([Method::POST])

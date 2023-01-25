@@ -16,18 +16,22 @@ timeout = 5000
 
 # Convention:
 # {sourceFile} => The file with the source code.
-# {executeFile} => The compiled binary file to execute.
+# {targetFile} => The compiled binary file to execute.
 
 [[executor.languages]]
 name = "c"
-compile = "gcc {sourceFile} -o {executeFile}"
-run = "{executeFile}"
+extension = "c"
+compile = "gcc {sourceFile} -o {targetFile}"
+run = "{targetFile}"
 
 [[executor.languages]]
-name = "py"
-run = "python3 {sourceFile}"
+name = "cpp"
+extension = "cpp"
+compile = "g++ {sourceFile} -o {targetFile}"
+run = "{targetFile}"
 
 # Assuming we only support single source files.
 [[executor.languages]]
 name = "rust"
+extension = "rs"
 run = "cargo script {sourceFile}"

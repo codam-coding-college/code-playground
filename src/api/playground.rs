@@ -5,7 +5,11 @@
 
 use std::sync::Arc;
 
-use axum::{response::{Json, IntoResponse}, extract::State, http::StatusCode};
+use axum::{
+	extract::State,
+	http::StatusCode,
+	response::{IntoResponse, Json},
+};
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -18,20 +22,20 @@ use crate::AppState;
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PlaygroundRequest {
 	/// The code to execute.
-	code: String,
+	pub code: String,
 	/// The language shortcut (e.g. `py` for Python).
-	language: String,
+	pub language: String,
 	/// Optional flags for the compiler / interpreter.
-	flags: Option<String>,
+	pub flags: Option<String>,
 }
 
 /// The response payload.
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PlaygroundResponse {
 	/// The successfull output of the execution.
-	output: Option<String>,
+	pub output: Option<String>,
 	/// The error output of the execution.
-	error: Option<String>,
+	pub error: Option<String>,
 }
 
 // Route handlers
@@ -40,12 +44,29 @@ pub struct PlaygroundResponse {
 /// The route handler.
 pub async fn handle(
 	State(state): State<Arc<AppState>>,
-	Json(payload): Json<PlaygroundRequest>
+	Json(payload): Json<PlaygroundRequest>,
 ) -> impl IntoResponse {
-	println!("{:?}", payload);
+	println!("Received request: {}", payload.language);
 
-	return (StatusCode::CREATED, Json(PlaygroundResponse {
-		error: None,
-		output: None,
-	}));
+	let code_iter = state.config.executor.languages
+		.iter()
+		.find(|&x| x.name == payload.language);
+
+	let code_lang = match code_iter {
+		None => return (
+			StatusCode::UNSUPPORTED_MEDIA_TYPE, Json(PlaygroundResponse { 
+				error: Some(String::from("Unsupported playground language")),
+				output: None
+			})
+		),
+		Some(lang) => lang
+	};
+
+	return (
+		StatusCode::OK,
+		Json(PlaygroundResponse {
+			error: None,
+			output: None,
+		}),
+	);
 }
