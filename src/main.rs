@@ -32,8 +32,8 @@ fn get_cors_layer(state: Arc<AppState>) -> CorsLayer {
 		.collect::<Vec<HeaderValue>>();
 
 	return CorsLayer::new()
-		.allow_origin(origins)
-		.allow_methods([Method::POST])
+		// .allow_origin(origins)
+		// .allow_methods([Method::POST])
 		.allow_headers([http::header::CONTENT_TYPE]); // For JSON
 }
 

@@ -5,15 +5,15 @@
 
 use std::sync::Arc;
 
+use anyhow::{Result, Error};
 use axum::{
 	extract::State,
 	http::StatusCode,
 	response::{IntoResponse, Json},
 };
-use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::{AppState, executor::ModuleParams};
+use crate::{AppState, executor::{CompiledExecutor, ModuleParams, Execute, InterpretedExecutor}};
 
 // Request and Response
 //===========================================================================//
@@ -46,8 +46,8 @@ pub async fn handle(
 	State(state): State<Arc<AppState>>,
 	Json(payload): Json<PlaygroundRequest>,
 ) -> impl IntoResponse {
-	println!("Received request: {}", payload.language);
 
+	println!("Received request: {}", payload.language);
 	let code_iter = state.config.executor.languages
 		.iter()
 		.find(|&x| x.name == payload.language);
@@ -72,11 +72,38 @@ pub async fn handle(
 		},
 	};
 
-	return (
-		StatusCode::OK,
-		Json(PlaygroundResponse {
-			error: None,
-			output: None,
-		}),
-	);
+	// Fetch correct executor
+	let output: Result<String>;
+	if let Some(compile) = code_lang.compile.clone() {
+		let exec = CompiledExecutor::new(compile, code_lang.execute.clone(), module);
+		output = exec.execute();
+	} else {
+		let exec = InterpretedExecutor::new(code_lang.execute.clone(), module);
+		output = exec.execute();
+	}
+
+	match output {
+
+		// Good execution
+		Ok(x) => {
+			return (
+				StatusCode::OK,
+				Json(PlaygroundResponse {
+					error: None,
+					output: Some(x),
+				}),
+			);
+		},
+
+		// Any kind of error, including internal.
+		Err(e) => {
+			return (
+				StatusCode::UNPROCESSABLE_ENTITY,
+				Json(PlaygroundResponse {
+					error: Some(e.to_string()),
+					output: None,
+				}),
+			);
+		}
+	}
 }
