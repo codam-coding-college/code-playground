@@ -28,7 +28,7 @@ run = "{targetFile}"
 name = "cpp"
 extension = "cpp"
 compile = "g++ {sourceFile} -o {targetFile}"
-run = "{targetFile}"
+run = "./{targetFile}"
 
 # Assuming we only support single source files.
 [[executor.languages]]

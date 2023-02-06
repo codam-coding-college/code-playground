@@ -3,12 +3,12 @@
 // See README in the root project for more information.
 // -----------------------------------------------------------------------------
 
-use anyhow::{ Result, Error, bail };
+use anyhow::{Ok, Error, Result};
 use uuid::Uuid;
-use tempfile::tempdir;
 use wait_timeout::ChildExt;
 use std::fs::File;
 use std::io::{Write, Read};
+use std::path::Path;
 use std::process::{Stdio, Command};
 use std::time::Duration;
 
@@ -35,21 +35,35 @@ pub trait Execute {
 // Functions
 //===========================================================================//
 
-/// Executes a command with a timeout, if the Result is none the
+/// Executes a full command with a timeout, if the Result is none the
 /// command timed out, in case of error the result is used.
 /// 
 /// If it all went well, stdout is returned.
+/// 
+/// E.G: gcc bruh.c -o a.out
 fn execute_with_timeout(command: String, timeout: &Duration) -> Result<String> {
-	let mut child = Command::new(command)
+
+	// Split arguments from program executable.
+	// It might be a bit naive to assume that the its always just at the first space.
+
+	println!("{}", command);
+	let mut split_command = command.split_whitespace();
+	let executable = match split_command.next() {
+		Some(x) => x,
+		None => return Err(Error::msg("Timeout!"))
+	};
+
+	let mut child = Command::new(executable)
+	.args(split_command.clone())
 	.stdout(Stdio::piped())
 	.stderr(Stdio::piped())
 	.spawn()?;
 
-	let mut stderr = String::new();
-	if let Some(ref mut err) = child.stderr {
-		err.read_to_string(&mut stderr)?;
-		return Err(Error::msg(stderr));
-	}
+	// let mut stderr = String::new();
+	// if let Some(ref mut err) = child.stderr {
+	// 	err.read_to_string(&mut stderr)?;
+	// 	return Err(Error::msg(stderr));
+	// }
 	
 	let mut stdout = String::new();
 	if let Some(ref mut out) = child.stdout {
@@ -66,6 +80,7 @@ fn execute_with_timeout(command: String, timeout: &Duration) -> Result<String> {
 	} else {
 		return Err(Error::msg("Timeout!"));
 	}
+
 }
 
 // Compiled
@@ -89,16 +104,18 @@ impl Execute for CompiledExecutor {
 	fn execute(&self) -> Result<String> {
 		// Create temporary directory with the source file in it
 		let id = Uuid::new_v4();
-		let dir = tempdir()?;
-		let exec_path = dir.path().join(id.to_string());
-		let srcs_path = dir.path().join(format!("{}.{}", id, self.content.extension));
+
+		let path = Path::new("/tmp/code");
+		let dir = std::fs::create_dir_all(path)?;
+		let exec_path = path.join(id.to_string());
+		let srcs_path = path.join(format!("{}.{}", id, self.content.extension));
 		let timeout = Duration::from_secs(self.content.timeout);
 
 		// Write the source code into the file
 		let mut source_file = File::create(srcs_path.clone())?;
+
 		println!("{:?}", srcs_path.to_str());
 		source_file.write_all(self.content.code.as_bytes())?;
-
 
 		// Compile process
 		// TODO: Do not panic here!
@@ -113,13 +130,7 @@ impl Execute for CompiledExecutor {
 		// TODO: Do not panic here!
 		let execute = self.execute_cmd
 			.replace("{targetFile}", exec_path.to_str().unwrap());
-		let execute_out = match execute_with_timeout(execute, &timeout) {
-			Ok(x) => x,
-			Err(e) => return Err(e)
-		};
-
-		dir.close()?;
-		return Ok(execute_out);
+		return Ok(execute_with_timeout(execute, &timeout)?);
 	}
 }
 

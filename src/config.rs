@@ -93,9 +93,9 @@ impl Default for ExecutorConfig {
 pub struct CodeLanguage {
 	/// The language name, e.g: `c`, `cpp`, `rust`, this will be used to match with what is requested.
 	pub name: String,
-	/// The compile command, e.g: `gcc {sourceFile} -o {executeFile}`
+	/// The compile command, e.g: `gcc {sourceFile} -o {targetFile}`
 	pub compile: Option<String>,
-	/// The execute command, e.g: `{executeFile}` or if compile is optional `python3 {executeFile}`
+	/// The execute command, e.g: `{targetFile}` or if compile is optional `python3 {targetFile}`
 	pub execute: String,
 	/// The file extension of the language.
 	pub extension: String
@@ -104,8 +104,8 @@ pub struct CodeLanguage {
 impl Default for CodeLanguage {
 	fn default() -> CodeLanguage {
 		CodeLanguage {
-			compile: Some("gcc {sourceFile} -o {executeFile}".to_string()),
-			execute: "{executeFile}".to_string(),
+			compile: Some("gcc {sourceFile} -o {targetFile}".to_string()),
+			execute: "{targetFile}".to_string(),
 			name: "c".to_string(),
 			extension: "c".to_string()
 		}
