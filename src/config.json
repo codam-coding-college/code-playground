@@ -4,6 +4,7 @@
 	"validOrigins": [
 		"*.42.fr",
 		"*.codam.nl",
-		"localhost:3000"
+		"localhost:3000",
+		"0.0.0.0:3000"
 	]
 }
