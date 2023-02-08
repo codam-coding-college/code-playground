@@ -104,7 +104,7 @@ pub struct CodeLanguage {
 impl Default for CodeLanguage {
 	fn default() -> CodeLanguage {
 		CodeLanguage {
-			compile: Some("gcc {sourceFile} -o {targetFile}".to_string()),
+			compile: Some("gcc {flags} {sourceFile} -o {targetFile}".to_string()),
 			execute: "{targetFile}".to_string(),
 			name: "c".to_string(),
 			extension: "c".to_string()
