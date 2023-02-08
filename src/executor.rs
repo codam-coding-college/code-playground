@@ -40,29 +40,31 @@ pub trait Execute {
 /// Basically waits and returns the output of a child process and waits for it
 /// or returns err if the child timesout.
 fn wait_with_output_timeout(mut child: Child, duration: &Duration) -> Result<Output> {
-	// Yeet stdin, we don't need it.
-	drop(child.stdin.take());
-
 	// Populate either stdout or stderr.
-	let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
-	match (child.stdout.take(), child.stderr.take()) {
-
-		(None, None) => {}
-		(Some(mut out), None) => {
-			out.read_to_end(&mut stdout)?;
-		}
-		(None, Some(mut err)) => {
-			err.read_to_end(&mut stderr)?;
-		}
-		(Some(mut out), Some(mut err)) => {
-			out.read_to_end(&mut stdout)?;
-			err.read_to_end(&mut stderr)?;
-		}
-	}
-
-	// Now wait for the child, error on timeout.
 	match child.wait_timeout(*duration)? {
-		Some(status) => Ok(Output { status, stdout, stderr }),
+		Some(status) => {
+			// Yeet stdin, we don't need it.
+			drop(child.stdin.take());
+
+			// Fetch the stdout and stderr of the child.
+			let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
+			match (child.stdout.take(), child.stderr.take()) {
+		
+				(None, None) => {}
+				(Some(mut out), None) => {
+					out.read_to_end(&mut stdout)?;
+				}
+				(None, Some(mut err)) => {
+					err.read_to_end(&mut stderr)?;
+				}
+				(Some(mut out), Some(mut err)) => {
+					out.read_to_end(&mut stdout)?;
+					err.read_to_end(&mut stderr)?;
+				}
+			}
+
+			Ok(Output { status, stdout, stderr })
+		},
 		None => Err(Error::msg("Timeout!"))
 	}
 }

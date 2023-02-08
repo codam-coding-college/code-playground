@@ -12,7 +12,7 @@ origins = ["https://codam.nl"]
 
 # Configurations of the overall execution
 [executor]
-timeout = 5000
+timeout = 5
 
 # Convention:
 # {sourceFile} => The file with the source code.
