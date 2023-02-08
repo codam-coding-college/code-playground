@@ -17,21 +17,22 @@ timeout = 5000
 # Convention:
 # {sourceFile} => The file with the source code.
 # {targetFile} => The compiled binary file to execute.
+# {flags} => The compile or intepreter flags.
 
 [[executor.languages]]
 name = "c"
 extension = "c"
-compile = "gcc {sourceFile} -o {targetFile}"
+compile = "gcc {flags} {sourceFile} -o {targetFile}"
 run = "{targetFile}"
 
 [[executor.languages]]
 name = "cpp"
 extension = "cpp"
-compile = "g++ {sourceFile} -o {targetFile}"
+compile = "g++ {flags} {sourceFile} -o {targetFile}"
 run = "./{targetFile}"
 
 # Assuming we only support single source files.
 [[executor.languages]]
 name = "rust"
 extension = "rs"
-run = "cargo script {sourceFile}"
+run = "cargo script {flags} {sourceFile}"

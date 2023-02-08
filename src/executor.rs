@@ -145,6 +145,7 @@ impl Execute for CompiledExecutor {
 		// Compile process
 		// TODO: Do not panic here!
 		let compile = self.compile_cmd
+			.replace("{flags}", self.content.flags.as_str())
 			.replace("{sourceFile}", srcs_path.to_str().unwrap())
 			.replace("{targetFile}", exec_path.to_str().unwrap());
 		if let Err(err) = execute_with_timeout(compile, &timeout) {
