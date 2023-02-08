@@ -4,12 +4,12 @@
 // -----------------------------------------------------------------------------
 
 use anyhow::{Ok, Error, Result};
-use uuid::Uuid;
 use wait_timeout::ChildExt;
+use std::process::{Command, Stdio, Child, Output};
+use uuid::Uuid;
 use std::fs::File;
 use std::io::{Write, Read};
 use std::path::Path;
-use std::process::{Stdio, Command};
 use std::time::Duration;
 
 //===========================================================================//
@@ -35,52 +35,78 @@ pub trait Execute {
 // Functions
 //===========================================================================//
 
+/// Believe me this was a pain to write.
+/// 
+/// Basically waits and returns the output of a child process and waits for it
+/// or returns err if the child timesout.
+fn wait_with_output_timeout(mut child: Child, duration: &Duration) -> Result<Output> {
+	// Yeet stdin, we don't need it.
+	drop(child.stdin.take());
+
+	// Populate either stdout or stderr.
+	let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
+	match (child.stdout.take(), child.stderr.take()) {
+
+		(None, None) => {}
+		(Some(mut out), None) => {
+			out.read_to_end(&mut stdout)?;
+		}
+		(None, Some(mut err)) => {
+			err.read_to_end(&mut stderr)?;
+		}
+		(Some(mut out), Some(mut err)) => {
+			out.read_to_end(&mut stdout)?;
+			err.read_to_end(&mut stderr)?;
+		}
+	}
+
+	// Now wait for the child, error on timeout.
+	match child.wait_timeout(*duration)? {
+		Some(status) => Ok(Output { status, stdout, stderr }),
+		None => Err(Error::msg("Timeout!"))
+	}
+}
+
 /// Executes a full command with a timeout, if the Result is none the
 /// command timed out, in case of error the result is used.
 /// 
 /// If it all went well, stdout is returned.
 /// 
 /// E.G: gcc bruh.c -o a.out
-fn execute_with_timeout(command: String, timeout: &Duration) -> Result<String> {
+fn execute_with_timeout(command: String, duration: &Duration) -> Result<String> {
 
 	// Split arguments from program executable.
-	// It might be a bit naive to assume that the its always just at the first space.
-
-	println!("{}", command);
+	// TODO: It might be a bit naive to assume that the its always just at the first space.
 	let mut split_command = command.split_whitespace();
 	let executable = match split_command.next() {
 		Some(x) => x,
-		None => return Err(Error::msg("Timeout!"))
+		None => return Err(Error::msg("Failed to split command, check config!"))
 	};
 
-	let mut child = Command::new(executable)
-	.args(split_command.clone())
-	.stdout(Stdio::piped())
-	.stderr(Stdio::piped())
-	.spawn()?;
+	let child = Command::new(executable)
+		.args(split_command)
+		.stdout(Stdio::piped())
+		.stderr(Stdio::piped())
+		.spawn()
+		.map_err(Error::from)?;
 
-	// let mut stderr = String::new();
-	// if let Some(ref mut err) = child.stderr {
-	// 	err.read_to_string(&mut stderr)?;
-	// 	return Err(Error::msg(stderr));
-	// }
-	
-	let mut stdout = String::new();
-	if let Some(ref mut out) = child.stdout {
-		out.read_to_string(&mut stdout)?;
+	let output = wait_with_output_timeout(child, duration)?;
+	let stderr = String::from_utf8(output.stderr).map_err(Error::from)?;
+
+	// Shit went south
+	if !output.status.success() || !stderr.is_empty() {
+		let exit_code = match output.status.code() {
+			Some(x) => x,
+			None => 1, // Technically a deadly signal was sent.
+		};
+
+		return Err(Error::msg(format!(
+			"Code: {exit_code}\nOutput: {stderr}\n",
+		)));
 	}
 
-	// Wait for it to finish.
-	let status = child.wait_timeout(*timeout)?;
-	if let Some(exit_code) = status {
-		if !exit_code.success() {
-			return Err(Error::msg("Process did not execute sucessfully"));
-		}
-		return Ok(stdout);
-	} else {
-		return Err(Error::msg("Timeout!"));
-	}
-
+	// Yeet STDOUT back out!
+	Ok(String::from_utf8(output.stdout).map_err(Error::from)?)
 }
 
 // Compiled
@@ -106,15 +132,14 @@ impl Execute for CompiledExecutor {
 		let id = Uuid::new_v4();
 
 		let path = Path::new("/tmp/code");
-		let dir = std::fs::create_dir_all(path)?;
+		std::fs::create_dir_all(path)?;
+
 		let exec_path = path.join(id.to_string());
 		let srcs_path = path.join(format!("{}.{}", id, self.content.extension));
 		let timeout = Duration::from_secs(self.content.timeout);
 
 		// Write the source code into the file
 		let mut source_file = File::create(srcs_path.clone())?;
-
-		println!("{:?}", srcs_path.to_str());
 		source_file.write_all(self.content.code.as_bytes())?;
 
 		// Compile process
